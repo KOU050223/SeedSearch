@@ -10,3 +10,8 @@ wheels/
 .venv
 
 docs/class_private_docs/
+
+.DS_Store
+
+# LocalDocs
+TODO.md
