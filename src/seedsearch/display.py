@@ -2,7 +2,8 @@
 
 import pandas as pd
 import re
-from typing import Optional, List, Union
+import json
+from typing import Optional, List, Union, Literal
 
 
 class ResultDisplay:
@@ -113,6 +114,45 @@ class ResultDisplay:
                 print(f"   研究分担者: {co_investigators_display}")
             print(f"   キーワード: {keywords_display}")
             print()
+        print("詳細を確認するには、以下のコマンドを使用してください:")
+        print("  seedsearch show <研究課題番号>\n")
+
+    @staticmethod
+    def output_json(results: pd.DataFrame) -> None:
+        """
+        検索結果をJSON形式で出力
+
+        Args:
+            results: 検索結果のDataFrame
+        """
+        if results.empty:
+            print(json.dumps({"count": 0, "results": []}, ensure_ascii=False, indent=2))
+            return
+
+        # DataFrameをJSON化（NaNをNoneに変換）
+        results_list = results.fillna("").to_dict(orient="records")
+
+        output = {
+            "count": len(results),
+            "results": results_list
+        }
+
+        print(json.dumps(output, ensure_ascii=False, indent=2))
+
+    @staticmethod
+    def output_csv(results: pd.DataFrame) -> None:
+        """
+        検索結果をCSV形式で出力
+
+        Args:
+            results: 検索結果のDataFrame
+        """
+        if results.empty:
+            print("検索結果が見つかりませんでした")
+            return
+
+        # CSVとして標準出力に出力
+        print(results.to_csv(index=False))
 
     @staticmethod
     def display_detail(

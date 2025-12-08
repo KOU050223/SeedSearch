@@ -39,10 +39,10 @@ class ResearchSearcher:
         field: str = "all",
     ) -> pd.DataFrame:
         """
-        キーワードで研究課題を検索
+        キーワードで研究課題を検索（複数ワード対応）
 
         Args:
-            query: 検索キーワード
+            query: 検索キーワード（スペース区切りで複数指定可能）
             exact: True の場合は完全一致検索、False の場合は部分一致検索
             field: 検索対象フィールド（"all", "title", "keyword", "overview", "researcher"）
 
@@ -69,18 +69,31 @@ class ResearchSearcher:
                 f"期待される列: {target_columns}"
             )
 
-        # 各列で検索を実行
+        # 検索クエリを複数ワードに分割（スペース区切り）
+        keywords = [kw.strip() for kw in query.split() if kw.strip()]
+
+        if not keywords:
+            # 空の検索クエリの場合は空のDataFrameを返す
+            return self.data.iloc[0:0]
+
+        # 複数キーワードのOR検索
         mask = pd.Series([False] * len(self.data), index=self.data.index)
 
-        for col in existing_columns:
-            if exact:
-                # 完全一致検索
-                mask |= self.data[col].astype(str) == query
-            else:
-                # 部分一致検索（大文字小文字を区別しない）
-                mask |= self.data[col].astype(str).str.contains(
-                    query, case=False, na=False
-                )
+        for keyword in keywords:
+            keyword_mask = pd.Series([False] * len(self.data), index=self.data.index)
+
+            for col in existing_columns:
+                if exact:
+                    # 完全一致検索
+                    keyword_mask |= self.data[col].astype(str) == keyword
+                else:
+                    # 部分一致検索（大文字小文字を区別しない）
+                    keyword_mask |= self.data[col].astype(str).str.contains(
+                        keyword, case=False, na=False, regex=False
+                    )
+
+            # いずれかのキーワードにヒットしたらOR結合
+            mask |= keyword_mask
 
         return self.data[mask]
 

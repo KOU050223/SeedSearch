@@ -34,7 +34,13 @@ def cli():
     default=None,
     help="表示件数の制限"
 )
-def search(query: str, exact: bool, field: str, limit: int):
+@click.option(
+    "--output", "-o",
+    type=click.Choice(["table", "json", "csv"]),
+    default="table",
+    help="出力形式（table/json/csv）"
+)
+def search(query: str, exact: bool, field: str, limit: int, output: str):
     """研究シーズを検索
 
     \b
@@ -52,13 +58,23 @@ def search(query: str, exact: bool, field: str, limit: int):
         searcher = ResearchSearcher(data)
         results = searcher.search(query, exact=exact, field=field)
 
-        # 結果を表示（検索キーワードをハイライト）
-        display = ResultDisplay()
-        display.display_list(results, limit=limit, search_keywords=query)
+        # limit適用
+        if limit:
+            results = results.head(limit)
 
-        # サマリーも表示
-        if not results.empty and len(results) > 5:
-            display.display_summary(results)
+        # 結果を表示
+        display = ResultDisplay()
+        if output == "json":
+            display.output_json(results)
+        elif output == "csv":
+            display.output_csv(results)
+        else:  # table
+            # 複数ワード検索の場合、キーワードをリスト化してハイライト
+            search_keywords = [kw.strip() for kw in query.split() if kw.strip()]
+            display.display_list(results, limit=limit, search_keywords=search_keywords)
+            # サマリーも表示
+            if not results.empty and len(results) > 5:
+                display.display_summary(results)
 
     except FileNotFoundError as e:
         click.echo(f"エラー: {e}", err=True)

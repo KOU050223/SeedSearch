@@ -23,6 +23,17 @@ https://gihyo.jp/article/2024/09/monthly-python-2409
 uv run seedsearch <検索ワード>
 ```
 
+## データソース
+
+本プロジェクトで使用している研究データは、以下のデータベースから取得しています：
+
+**出典：KAKEN：科学研究費助成事業データベース（国立情報学研究所）**
+https://kaken.nii.ac.jp/
+
+- **ライセンス**: [クリエイティブ・コモンズ表示4.0国際（CC BY 4.0）](https://creativecommons.org/licenses/by/4.0/deed.ja)
+- データは加工して使用しています（`kaken_cleaned.csv`）
+- データの詳細とライセンス情報については [data/README.md](data/README.md) を参照してください
+
 ## 開発環境構築手順
 1. リポジトリをクローンする
 2. uvをインストールする

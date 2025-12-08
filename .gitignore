@@ -15,3 +15,10 @@ docs/class_private_docs/
 
 # LocalDocs
 TODO.md
+
+# Data files (keep only README.md in data/)
+data/*.csv
+data/chromadb/
+
+# Scripts for unimplemented features
+src/script/transform_csv2vector.py
