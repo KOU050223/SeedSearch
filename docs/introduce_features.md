@@ -56,26 +56,6 @@ uv sync
 uv pip install -e .
 ```
 
-### データファイルの配置（共通）
-
-どちらの方法でインストールした場合でも、データファイルの配置が必要です：
-
-```bash
-# 作業ディレクトリを作成
-mkdir -p ~/seedsearch_data
-cd ~/seedsearch_data
-
-# dataディレクトリを作成
-mkdir -p data
-```
-
-**データ取得方法**:
-
-1. [KAKEN（科学研究費助成事業データベース）](https://kaken.nii.ac.jp/)にアクセス
-2. 「福岡工業大学」で所属機関を検索
-3. 検索結果を CSV 形式でダウンロード
-4. `data/kaken.csv`として保存
-
 ### 動作確認
 
 インストールが正しく完了したか確認します：

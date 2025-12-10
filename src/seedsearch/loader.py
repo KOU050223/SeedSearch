@@ -3,6 +3,7 @@
 import pandas as pd
 from pathlib import Path
 from typing import Optional
+from importlib.resources import files
 
 
 class DataLoader:
@@ -14,8 +15,9 @@ class DataLoader:
             csv_path: CSVファイルのパス。Noneの場合はデフォルトパスを使用
         """
         if csv_path is None:
-            # デフォルトパス: プロジェクトルート/data/kaken.csv
-            self.csv_path = Path(__file__).parent.parent.parent / "data" / "kaken.csv"
+            # パッケージ内のデータファイルを使用
+            data_file = files("seedsearch.data").joinpath("kaken.csv")
+            self.csv_path = Path(str(data_file))
         else:
             self.csv_path = csv_path
 
@@ -30,15 +32,25 @@ class DataLoader:
             FileNotFoundError: CSVファイルが見つからない場合
             pd.errors.EmptyDataError: CSVファイルが空の場合
         """
-        if not self.csv_path.exists():
-            raise FileNotFoundError(
-                f"データファイルが見つかりません: {self.csv_path}\n"
-                f"data/kaken.csv を配置してください"
-            )
-
         try:
             # CSVを読み込み（BOM付きUTF-8に対応）
-            df = pd.read_csv(self.csv_path, encoding="utf-8-sig")
+            # パッケージ内のリソースの場合は直接読み込み
+            from importlib.resources import as_file
+
+            # csv_pathがパッケージリソースかどうかを確認
+            if "seedsearch" in str(self.csv_path) and not self.csv_path.exists():
+                # パッケージリソースから読み込み
+                data_file = files("seedsearch.data").joinpath("kaken.csv")
+                with as_file(data_file) as csv_file:
+                    df = pd.read_csv(csv_file, encoding="utf-8-sig")
+            else:
+                # 通常のファイルパスから読み込み
+                if not self.csv_path.exists():
+                    raise FileNotFoundError(
+                        f"データファイルが見つかりません: {self.csv_path}\n"
+                        f"data/kaken.csv を配置してください"
+                    )
+                df = pd.read_csv(self.csv_path, encoding="utf-8-sig")
 
             if df.empty:
                 raise pd.errors.EmptyDataError("CSVファイルにデータがありません")
@@ -49,6 +61,8 @@ class DataLoader:
             raise pd.errors.EmptyDataError(
                 f"CSVファイルが空です: {self.csv_path}"
             ) from e
+        except FileNotFoundError:
+            raise
         except Exception as e:
             raise Exception(
                 f"CSVファイルの読み込みに失敗しました: {self.csv_path}\n"
