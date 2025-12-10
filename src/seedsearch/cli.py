@@ -29,6 +29,12 @@ def cli():
     help="検索対象フィールド"
 )
 @click.option(
+    "--operator", "-op",
+    type=click.Choice(["and", "or"]),
+    default="and",
+    help="複数ワードの検索方法（and: すべて含む / or: いずれか含む、デフォルトはand）"
+)
+@click.option(
     "--limit", "-l",
     type=int,
     default=None,
@@ -40,12 +46,14 @@ def cli():
     default="table",
     help="出力形式（table/json/csv）"
 )
-def search(query: str, exact: bool, field: str, limit: int, output: str):
+def search(query: str, exact: bool, field: str, operator: str, limit: int, output: str):
     """研究シーズを検索
 
     \b
     例:
       seedsearch search "AI"
+      seedsearch search "AI ロボット"              # AND検索（両方含む）
+      seedsearch search "AI ロボット" --operator or  # OR検索（いずれか含む）
       seedsearch search "ロボット" --field keyword
       seedsearch search "松尾" --field researcher --limit 10
     """
@@ -56,7 +64,7 @@ def search(query: str, exact: bool, field: str, limit: int, output: str):
 
         # 検索を実行
         searcher = ResearchSearcher(data)
-        results = searcher.search(query, exact=exact, field=field)
+        results = searcher.search(query, exact=exact, field=field, operator=operator)
 
         # limit適用
         if limit:

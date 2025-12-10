@@ -37,6 +37,7 @@ class ResearchSearcher:
         query: str,
         exact: bool = False,
         field: str = "all",
+        operator: str = "and",
     ) -> pd.DataFrame:
         """
         キーワードで研究課題を検索（複数ワード対応）
@@ -45,17 +46,24 @@ class ResearchSearcher:
             query: 検索キーワード（スペース区切りで複数指定可能）
             exact: True の場合は完全一致検索、False の場合は部分一致検索
             field: 検索対象フィールド（"all", "title", "keyword", "overview", "researcher"）
+            operator: 複数キーワードの結合方法（"and" または "or"、デフォルトは "and"）
 
         Returns:
             pd.DataFrame: 検索結果
 
         Raises:
-            ValueError: 無効なfieldが指定された場合
+            ValueError: 無効なfieldまたはoperatorが指定された場合
         """
         if field not in self.SEARCH_FIELDS:
             raise ValueError(
                 f"無効な検索フィールドです: {field}\n"
                 f"使用可能なフィールド: {', '.join(self.SEARCH_FIELDS.keys())}"
+            )
+
+        if operator not in ["and", "or"]:
+            raise ValueError(
+                f"無効な演算子です: {operator}\n"
+                f"使用可能な演算子: 'and', 'or'"
             )
 
         target_columns = self.SEARCH_FIELDS[field]
@@ -76,24 +84,45 @@ class ResearchSearcher:
             # 空の検索クエリの場合は空のDataFrameを返す
             return self.data.iloc[0:0]
 
-        # 複数キーワードのOR検索
-        mask = pd.Series([False] * len(self.data), index=self.data.index)
+        # 複数キーワードのAND/OR検索
+        if operator == "and":
+            # AND検索: すべてのキーワードを含む行のみ
+            mask = pd.Series([True] * len(self.data), index=self.data.index)
 
-        for keyword in keywords:
-            keyword_mask = pd.Series([False] * len(self.data), index=self.data.index)
+            for keyword in keywords:
+                keyword_mask = pd.Series([False] * len(self.data), index=self.data.index)
 
-            for col in existing_columns:
-                if exact:
-                    # 完全一致検索
-                    keyword_mask |= self.data[col].astype(str) == keyword
-                else:
-                    # 部分一致検索（大文字小文字を区別しない）
-                    keyword_mask |= self.data[col].astype(str).str.contains(
-                        keyword, case=False, na=False, regex=False
-                    )
+                for col in existing_columns:
+                    if exact:
+                        # 完全一致検索
+                        keyword_mask |= self.data[col].astype(str) == keyword
+                    else:
+                        # 部分一致検索（大文字小文字を区別しない）
+                        keyword_mask |= self.data[col].astype(str).str.contains(
+                            keyword, case=False, na=False, regex=False
+                        )
 
-            # いずれかのキーワードにヒットしたらOR結合
-            mask |= keyword_mask
+                # すべてのキーワードを含む必要があるのでAND結合
+                mask &= keyword_mask
+        else:
+            # OR検索: いずれかのキーワードを含む行
+            mask = pd.Series([False] * len(self.data), index=self.data.index)
+
+            for keyword in keywords:
+                keyword_mask = pd.Series([False] * len(self.data), index=self.data.index)
+
+                for col in existing_columns:
+                    if exact:
+                        # 完全一致検索
+                        keyword_mask |= self.data[col].astype(str) == keyword
+                    else:
+                        # 部分一致検索（大文字小文字を区別しない）
+                        keyword_mask |= self.data[col].astype(str).str.contains(
+                            keyword, case=False, na=False, regex=False
+                        )
+
+                # いずれかのキーワードにヒットしたらOR結合
+                mask |= keyword_mask
 
         return self.data[mask]
 
